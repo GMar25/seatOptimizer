@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} - Seat Optimizer</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-rbsA2VBKQJ1Z2i+5K76T1LDJEGkn4t4V0aPIRaPggVdGTV3h1pU06tBnmU9BbiFl"
+        crossorigin="anonymous">
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('user.home') }}">User</a>
+            <a class="navbar-brand" href="{{ url_for('admin.home') }}">Admin</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Bootstrap JavaScript and Dependencies -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-pprn3073KE6tl6og5PYnP+Xf6k8/hBO1YLns+Q+ill4xHBYCFm51YLg2x2QmZlFL"
+        crossorigin="anonymous"></script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
