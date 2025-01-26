@@ -28,7 +28,7 @@
   <!-- Header -->
   <header class="bg-light py-3">
     <div class="container d-flex justify-content-between align-items-center">
-        <img src="{{ url_for('static', filename='pictures/logo-american-short-header.png') }}" alt="American Airlines" class="logo">
+        <img src="{{ url_for('static', filename='/logo-american-short-header.png') }}" alt="American Airlines" class="logo">
       <div>
         <a href="#" class="text-decoration-none me-3">Plan travel</a>
         <a href="#" class="text-decoration-none me-3">Travel information</a>
@@ -45,19 +45,17 @@
 
     <!-- Number of Passengers Selector -->
     <div class="d-flex justify-content-center align-items-center my-4">
-      <form action="{{ url_for('user.flight_details') }}" method="get" class="text-center">
-        <div class="form-group mb-3">
-          <label for="numPassengers" class="form-label">Number of Passengers</label>
-          <select id="numPassengers" name="numPassengers" class="form-select d-inline-block w-auto">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-        </div>
-        <button type="submit" class="btn btn-primary">Search</button>
-      </form>
+        <form action="{{ url_for('user.trip_summary') }}" method="GET">
+            <label for="numPassengers" class="form-label">Number of Passengers</label>
+            <select id="numPassengers" name="num_passengers" class="form-select">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+            <button type="submit" class="btn btn-primary mt-3">Continue</button>
+          </form>          
     </div>
   </main>
 
