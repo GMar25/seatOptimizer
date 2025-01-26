@@ -420,9 +420,9 @@ def OX(plane: Plane, g1, g2):
     return (off1, off2)
 
 
-initial_pop = 4
+initial_pop = 256
 
-plane = Plane(100, 6, [1], 3)
+plane = Plane(200, 6, [1], 3)
 plane.populate_w_sample(80)
 
 generations = []
@@ -460,8 +460,7 @@ while iterations > 0:
         next.append(hq.heappop(results)[1])
         next.append(hq.heappop(results)[1])
 
-        curr = next
-
+    curr = next
     iterations -= 1
 
 scores = []
