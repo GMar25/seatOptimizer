@@ -43,8 +43,7 @@ class Seating:
                 self.arr.append(Person())
 
             else:
-
-
+                continue
         self.score = 0
         
     
