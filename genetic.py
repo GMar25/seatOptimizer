@@ -419,37 +419,40 @@ def OX(plane: Plane, g1, g2):
     return (off1, off2)
 
 
-initial_pop = 128
 
-plane = Plane(100, 4, [1], 3)
-plane.populate_w_sample(80)
+def output(initial_pop):
 
-generations = []
+    plane = Plane(100, 4, [1], 3)
+    plane.populate_w_sample(80)
 
-curr = []
-for i in range(initial_pop):
-    curr.append(Genome(plane))
+    generations = []
+
+    curr = []
+    for i in range(initial_pop):
+        curr.append(Genome(plane))
 
 
-    while len(curr) > 2:
-        next = []
+        while len(curr) > 2:
+            next = []
 
-        heap = []
-        for genome in curr:
-            hq.heappush(heap, (-genome.calc_heuristic(plane), genome))
+            heap = []
+            for genome in curr:
+                hq.heappush(heap, (-genome.calc_heuristic(plane), genome))
 
-        for i in range(len(curr) // 2):
-            elem1 = hq.heappop(heap)
-            elem2 = hq.heappop(heap)
+            for i in range(len(curr) // 2):
+                elem1 = hq.heappop(heap)
+                elem2 = hq.heappop(heap)
 
-            if i == 0:
-                generations.append((-elem1[0], deepcopy(elem1[1])))
+                if i == 0:
+                    generations.append((-elem1[0], deepcopy(elem1[1])))
 
-            children = OX(plane, elem1[1], elem2[1])
-            next.append(children[0])
-            next.append(children[1])
+                children = OX(plane, elem1[1], elem2[1])
+                next.append(children[0])
+                next.append(children[1])
 
-        curr = next
+            curr = next
 
-for i in range(len(generations)):
-    print(i, generations[i][0]) 
+    return generations[-1][1]
+
+    # for i in range(len(generations)):
+    #     print(i, generations[i][0]) 
