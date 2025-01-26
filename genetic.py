@@ -420,31 +420,38 @@ def OX(plane: Plane, g1, g2):
     return (off1, off2)
 
 
-initial_pop = 256
+initial_pop = 128
 
-plane = Plane(200, 6, [1], 3)
+plane = Plane(100, 6, [1], 3)
 plane.populate_w_sample(80)
 
 generations = []
+max_h = []
+avg_h = []
 
 curr = []
 for i in range(initial_pop):
     curr.append(Genome(plane))
 
-iterations = 25
-while iterations > 0:
+change = 1
+prev = -1
+while change >= .1:
     next = []
 
     heap = []
     for genome in curr:
         hq.heappush(heap, (-genome.calc_heuristic(plane), genome))
 
+    r_sum = 0
     for i in range(len(curr) // 2):
         elem1 = hq.heappop(heap)
         elem2 = hq.heappop(heap)
 
+        r_sum -= elem1[0]
+        r_sum -= elem2[0]
         if i == 0:
-            generations.append((-elem1[0], deepcopy(elem1[1])))
+            generations.append(deepcopy(elem1[1]))
+            max_h.append(-elem1[0])
 
         children = OX(plane, elem1[1], elem2[1])
         score1 = children[0].calc_heuristic(plane)
@@ -460,30 +467,28 @@ while iterations > 0:
         next.append(hq.heappop(results)[1])
         next.append(hq.heappop(results)[1])
 
+    avg_h.append(r_sum / len(curr))
+
+    if prev == -1:
+        prev = avg_h[-1]
+    else:
+        change = abs(avg_h[-1] - prev)
+        prev = avg_h[-1]
+
     curr = next
-    iterations -= 1
 
-for i in range(len(generations)):
-    print(i, generations[i][0]) 
-
-iterations = []
-scores = []
-for i in range(len(generations)):
-    iterations.append(i)
-    scores.append(generations[i][0])
-
-plt.plot(scores)
+plt.figure(1)
+plt.plot(max_h)
 plt.title("Generation vs Max Score")
 plt.xlabel("Generation")
 plt.ylabel("Heurestic Score")
-plt.savefig("please")
+plt.savefig("g1")
 
-# generations, list of genomes
-# genome.arr
-# in that arr is a list of passengers
-# passengers.score
+# Create second figure
+plt.figure(2)
+plt.plot(avg_h)
+plt.title("Generation vs Avg Score")
+plt.xlabel("Generation")
+plt.ylabel("Heurestic Score")
+plt.savefig("g2")
 
-'''
-for elem in generation:
-
-'''
