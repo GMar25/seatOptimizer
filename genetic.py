@@ -4,6 +4,7 @@ from copy import deepcopy
 import heapq as hq
 from random import randint, shuffle
 from typing import List
+import matplotlib.pyplot as plt
 
 PERC_PEOPLE_PREF = 30
 PERC_VERT_PREF = 30
@@ -419,11 +420,10 @@ def OX(plane: Plane, g1, g2):
     return (off1, off2)
 
 
+initial_pop = 256
 
-def output(initial_pop):
-
-    plane = Plane(33, 6, [1], 2)
-    plane.populate_w_sample(80)
+plane = Plane(200, 6, [1], 3)
+plane.populate_w_sample(80)
 
     generations = []
 
@@ -431,28 +431,65 @@ def output(initial_pop):
     for i in range(initial_pop):
         curr.append(Genome(plane))
 
+iterations = 25
+while iterations > 0:
+    next = []
 
-        while len(curr) > 2:
-            next = []
+    heap = []
+    for genome in curr:
+        hq.heappush(heap, (-genome.calc_heuristic(plane), genome))
 
-            heap = []
-            for genome in curr:
-                hq.heappush(heap, (-genome.calc_heuristic(plane), genome))
+    for i in range(len(curr) // 2):
+        elem1 = hq.heappop(heap)
+        elem2 = hq.heappop(heap)
 
-            for i in range(len(curr) // 2):
-                elem1 = hq.heappop(heap)
-                elem2 = hq.heappop(heap)
+        if i == 0:
+            generations.append((-elem1[0], deepcopy(elem1[1])))
 
-                if i == 0:
-                    generations.append((-elem1[0], deepcopy(elem1[1])))
+        children = OX(plane, elem1[1], elem2[1])
+        score1 = children[0].calc_heuristic(plane)
+        score2 = children[1].calc_heuristic(plane) 
 
-                children = OX(plane, elem1[1], elem2[1])
-                next.append(children[0])
-                next.append(children[1])
+        results = []
+        hq.heappush(results, (elem1[0], elem1[1]))
+        hq.heappush(results, (elem2[0], elem2[1]))
 
-            curr = next
+        hq.heappush(results, (-score1, children[0]))
+        hq.heappush(results, (-score2, children[1]))
+
+        next.append(hq.heappop(results)[1])
+        next.append(hq.heappop(results)[1])
+
+        curr = next
 
     return generations[-1][1]
 
     # for i in range(len(generations)):
     #     print(i, generations[i][0]) 
+
+iterations = []
+scores = []
+for i in range(len(generations)):
+    print(i, generations[i][0]) 
+
+iterations = []
+scores = []
+for i in range(len(generations)):
+    iterations.append(i)
+    scores.append(generations[i][0])
+
+plt.plot(scores)
+plt.title("Generation vs Max Score")
+plt.xlabel("Generation")
+plt.ylabel("Heurestic Score")
+plt.savefig("please")
+
+# generations, list of genomes
+# genome.arr
+# in that arr is a list of passengers
+# passengers.score
+
+'''
+for elem in generation:
+
+'''
