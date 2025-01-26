@@ -295,7 +295,7 @@ class Genome:
                 total += 1  
                 pos = i % p.cols
                 if (p.pref_vals[2] == 0):
-                    if (pos == 0 or pos == plane.cols - 1))
+                    if (pos == 0 or pos == plane.cols - 1)~:
                         met += 1
 
                 elif (p.pref_vals[2] == 1):
