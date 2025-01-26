@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from random import randint
+from copy import deepcopy
+import heapq as hq
+from random import randint, shuffle
 from typing import List
 
 PERC_PEOPLE_PREF = 30
@@ -30,46 +32,44 @@ class Plane:
         self._n_movable_passengers = 0
         self._n_immovable_passengers = 0
 
-    def is_movable(self, i: int):
-        """A moveable is a person and has preferences"""
-        return self.available and self.passengers[i] is not None
-
     def populate_w_sample(self, perc_available: int):
         """Populate seats (available, passengers) with data."""
         # Populate each spot with person/chair
         for i_moveable in range(self.rows * self.cols):
             if randint(1, 100) <= perc_available:  # If available
                 self.available.append(True)
-
-                if randint(1, 100) >= 50:
-                    self.passengers.append(Passenger(i_moveable))  # Movable Person
-                    self._n_movable_passengers += 1
-                else:
-                    self.passengers.append(None)  # Empty chair
-                    self._n_empty += 1
+                self.passengers.append(None)
 
             else:
                 self.available.append(False)
                 self.passengers.append(Passenger(i_moveable))  # Non movable person
                 self._n_immovable_passengers += 1
-        print(f"Added Passengers: immovable {self._n_immovable_passengers} movable {self._n_movable_passengers}")
-        print(f"Empty: {self._n_empty}")
+        # print(f"Added Passengers: immovable {self._n_immovable_passengers} movable {self._n_movable_passengers}")
+        # print(f"Empty: {self._n_empty}")
 
         # Add preferences for each moveable
         for i_moveable in range(self.rows * self.cols):
             # Ensure is a movable (person & preferences)
-            if not self.is_movable(i_moveable):
+            if self.passengers[i_moveable] != None:
                 continue
 
-            moveable: Passenger = self.passengers[i_moveable]
+            if randint(1, 100) >= 50:
+                self.passengers[i_moveable] = Passenger(i_moveable)  # Movable Person
+                # self._n_movable_passengers += 1
+            else:
+                continue
+                # self.passengers.append(None)  # Empty chair
+                # self._n_empty += 1
 
+            moveable: Passenger = self.passengers[i_moveable]
             # Add preference for people
             if randint(1, 100) <= PERC_PEOPLE_PREF:
                 print("Adding person")
+                
                 for _ in range(randint(1, 3)):  # Add up to 3 preferred seating next to people
                     i_rand_seat = randint(0, self.rows * self.cols - 1)
 
-                    if (i_rand_seat == i_moveable) or (not self.is_movable(i_rand_seat)):
+                    if (i_rand_seat == i_moveable) or (self.passengers[i_rand_seat] == None) or (not self.passengers[i_rand_seat].is_movable()):
                         continue  # Avoid adding self or other immovable
 
                     # Add to each other
@@ -96,7 +96,7 @@ class Plane:
                 moveable.pref_vals[1] = randint(0, self.sections - 1)
 
             # Add preference for aisle, middle, window
-            if randint(1, 100) <= PERC_HOR_PREF:
+            if randint(1, 100) <= PERC_HOR_PREF or (moveable.pref_vals[0] is None and moveable.pref_vals[1] is None):
                 print("Hor pref")
                 moveable.update_pref(hor=True)
                 moveable.pref_vals[2] = randint(0, 2)
@@ -111,8 +111,7 @@ class Plane:
                     print(self.passengers[index])
                     
     def get_section(self, index):
-        index /= self.cols
-        window = index / 3
+        window = max(1, self.rows // 3) * self.cols
 
         if index < window:
             return 0
@@ -124,16 +123,15 @@ class Plane:
             return 2
 
     def get_surrounding(self, index):
-        indices = []
 
-        r_pos = index / self.cols
+        r_pos = index // self.cols
         c_pos = index % self.cols
-        if (r_pos == 0): # front
+        if (r_pos == 0): # back
             t = index + self.cols
 
             if (c_pos == 0):
                 tr = t + 1
-                mr = index - 1
+                mr = index + 1
                 return [t, tr, mr]
 
             elif (c_pos == self.cols - 1):    
@@ -148,7 +146,7 @@ class Plane:
                 mr = index + 1
                 return [t, tl, tr, ml, mr]
 
-        elif (r_pos == self.rows - 1): # back
+        elif (r_pos == self.rows - 1): # front
             b = index - self.cols
 
             if (c_pos == 0):
@@ -158,14 +156,14 @@ class Plane:
 
             elif (c_pos == self.cols - 1):    
                 ml = index - 1
-                bl = index - 1
+                bl = b - 1
                 return [b, bl, ml]
 
             else:
                 ml = index - 1
                 mr = index + 1
-                bl = t - 1
-                br = t + 1
+                bl = b - 1
+                br = b + 1
                 return [b, bl, br, ml, mr]
 
         else:
@@ -217,6 +215,7 @@ class Passenger:
         self.pref = [people is not None, vert is not None, hor is not None]
         # people, section vertical, section horizontal ([0, 2]: window, aisle, other)
         self.pref_vals = [people, vert, hor]
+        self.score = -1
 
     def update_pref(self, people=None, vert=None, hor=None):
         """Arguments should be boolean or None"""
@@ -243,24 +242,22 @@ class Passenger:
 
 class Genome:
 
-    def __init__(self):
-        super()
-
-        self.arr = [] # array of Persons and empty seats
-        self.score = -1
-
     def __init__(self, plane: Plane):
         super()
 
+        passengers = [] # TODO slow
+        for elem in plane.passengers:
+            if elem != None and elem.is_movable():
+                passengers.append(deepcopy(elem))
+
+        shuffle(passengers)
         self.arr = []
         for i in range(plane.rows * plane.cols):
-            self.arr[i].append(Person())
-        self.score = -1
+            if plane.passengers[i] == None or not plane.passengers[i].is_movable():
+                self.arr.append(plane.passengers[i])
+            else:
+                self.arr.append(passengers.pop())
 
-    def __init__(self, g):
-        super()
-
-        self.arr = list(g.arr())
         self.score = -1
 
     def calc_heuristic(self, plane: Plane):
@@ -268,18 +265,22 @@ class Genome:
         r_sum = 0
         for i in range(len(self.arr)):
             p = self.arr[i]
+
+            if p is None or not p.is_movable():
+                continue
+
             total = 0
             met = 0
 
             # People
             if p.pref[0]:
                 total += 1
-                surrounding = plane.get_surrounding()
+                surrounding = plane.get_surrounding(i)
 
                 counter = 0 # number of people met
                 for elem in surrounding:
                     sp = self.arr[elem] # surrounding person
-                    if sp.pos in p.pref_vals[0]:
+                    if sp != None and sp.position1d in p.pref_vals[0]:
                         counter += 1
 
                 met += counter / len(p.pref_vals[0])
@@ -287,78 +288,168 @@ class Genome:
             # Vertical
             if p.pref[1]:
                 total += 1
-                if (p.pref_val[1] == plane.get_section(i)):
+                if (p.pref_vals[1] == plane.get_section(i)):
                     met += 1
 
             # Horizontal
             if p.pref[2]:
                 total += 1  
-                pos = i % p.cols
+                pos = i % plane.cols
                 if (p.pref_vals[2] == 0):
-                    if (pos == 0 or pos == plane.cols - 1)~:
+                    if (pos == 0 or pos == plane.cols - 1):
                         met += 1
 
                 elif (p.pref_vals[2] == 1):
-                    if (pos == plane.aisle[0] or pos == plane.aisle[0] + 1):
+                    if (pos == plane.aisles[0] or pos == plane.aisles[0] + 1):
                         met += 1
 
                 else:
-                    if (pos != 0 and pos != plane.cols - 1 and pos != plane.aisle[0] and pos != plane.aisle[0] + 1):
+                    if (pos != 0 and pos != plane.cols - 1 and pos != plane.aisles[0] and pos != plane.aisles[0] + 1):
                         met += 1
 
-            p.score = met / total # TODO
+            p.score = met / total
             r_sum += p.score
+
+        self.score = r_sum
+        return r_sum
         
-    
+    def __repr__(self):
+        output = ""
+
+        debug_col = 4
+
+        for i in range(len(self.arr)):
+            if self.arr[i] is None:
+                output += "A "  # Empty Chairs
+            elif not self.arr[i].is_movable():
+                output += "B "  # Occupied, but not moveable
+            else:
+                output += f"{self.arr[i].position1d} "  # Moveable
+
+            if (i + 1) % debug_col == 0:
+                output += '\n'
+
+        return output
+
+    def __lt__(self, other):
+        return True
+
 
 # Chair has Person attribute (use movable)
 def OX(plane: Plane, g1, g2):
 
     # Determine cross section
-    start = randint(0, len(plane.rows) - 1) * plane.cols 
-    end = randint(start + 1, len(plane.rows) - 1) * plane.cols
+    start = randint(0, plane.rows - 1) * plane.cols 
+    end = randint(start / plane.cols + 1, plane.rows) * plane.cols # not inclusive
 
     # Create offspring and Map
-    off1 = Genome(g1)
+    off1 = deepcopy(g1)
     used1 = set()
-    off2 = Genome(g2)
+    empty1 = 0
+    off2 = deepcopy(g2)
     used2 = set()
+    empty2 = 0
     
     # Perform cross
     for i in range(start, end):
         off1.arr[i] = g2.arr[i]
-        used1.add(off1.arr[i])
+        if (off1.arr[i] == None):
+            empty1 += 1
+        else:
+            used1.add(g2.arr[i].position1d)
 
         off2.arr[i] = g1.arr[i]
-        used2.add(off2.arr[i])
+        if (off2.arr[i] == None):
+            empty2 += 1
+        else:
+            used2.add(g1.arr[i].position1d)
 
-    # Move remaining elements
-    order = OX_helper(g1, used1)
     i = 0
-    for j in range(0, plane.rows * plane.cols):
-        if plane.available[j]:
-            off1.arr[j] = order[i]
-            i += 1
+    j = 0
+    while j < plane.rows * plane.cols:
+        
+        if j == start:
+            j = end
+            continue
 
-    order = OX_helper(g2, used2)
-    i = 0
-    for j in range(0, plane.rows * plane.cols):
         if plane.available[j]:
-            off2.arr[j] = order[i]
+
+            while i < plane.rows * plane.cols:
+                if g1.arr[i] is None:
+                    if (empty1 == 0):
+                        break
+                    else:
+                        empty1 -= 1
+
+                elif g1.arr[i].position1d not in used1 and g1.arr[i].is_movable():
+                    break
+
+                i +=1 
+
+            off1.arr[j] = g1.arr[i]
             i += 1
+        j += 1
+
+    i = 0
+    j = 0
+    while j < plane.rows * plane.cols:
+        
+        if j == start:
+            j = end
+            continue
+
+        if plane.available[j]:
+
+            while i < plane.rows * plane.cols:
+                if g2.arr[i] is None:
+                    if (empty2 == 0):
+                        break
+                    else:
+                        empty2 -= 1
+
+                elif g2.arr[i].position1d not in used2 and g2.arr[i].is_movable():
+                    break
+
+                i +=1 
+
+            off2.arr[j] = g2.arr[i]
+            i += 1
+        j += 1
 
     return (off1, off2)
 
-def OX_helper(g, used):
-    order = []
 
+initial_pop = 128
 
-    for i in range(len(g.arr)):
-        if g.arr[i].is_movable() and i not in used:
-            order.append(i)
-
-    return order
-
-plane = Plane(6, 4, [], 3)
+plane = Plane(100, 4, [1], 3)
 plane.populate_w_sample(80)
-print(plane)
+
+generations = []
+
+curr = []
+for i in range(initial_pop):
+    curr.append(Genome(plane))
+
+
+    while len(curr) > 2:
+        next = []
+
+        heap = []
+        for genome in curr:
+            hq.heappush(heap, (-genome.calc_heuristic(plane), genome))
+
+        for i in range(len(curr) // 2):
+            elem1 = hq.heappop(heap)
+            elem2 = hq.heappop(heap)
+
+            if i == 0:
+                generations.append((-elem1[0], deepcopy(elem1[1])))
+
+            children = OX(plane, elem1[1], elem2[1])
+            next.append(children[0])
+            next.append(children[1])
+
+        curr = next
+
+for i in range(len(generations)):
+    print(i, generations[i][0]) 
