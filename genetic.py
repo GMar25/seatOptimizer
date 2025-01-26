@@ -420,16 +420,16 @@ def OX(plane: Plane, g1, g2):
     return (off1, off2)
 
 
-initial_pop = 256
+initial_pop = 4
 
-plane = Plane(200, 6, [1], 3)
+plane = Plane(100, 6, [1], 3)
 plane.populate_w_sample(80)
 
-    generations = []
+generations = []
 
-    curr = []
-    for i in range(initial_pop):
-        curr.append(Genome(plane))
+curr = []
+for i in range(initial_pop):
+    curr.append(Genome(plane))
 
 iterations = 25
 while iterations > 0:
@@ -462,34 +462,18 @@ while iterations > 0:
 
         curr = next
 
-    return generations[-1][1]
+    iterations -= 1
 
-    # for i in range(len(generations)):
-    #     print(i, generations[i][0]) 
-
-iterations = []
 scores = []
 for i in range(len(generations)):
     print(i, generations[i][0]) 
 
-iterations = []
 scores = []
 for i in range(len(generations)):
-    iterations.append(i)
     scores.append(generations[i][0])
 
 plt.plot(scores)
 plt.title("Generation vs Max Score")
 plt.xlabel("Generation")
 plt.ylabel("Heurestic Score")
-plt.savefig("please")
-
-# generations, list of genomes
-# genome.arr
-# in that arr is a list of passengers
-# passengers.score
-
-'''
-for elem in generation:
-
-'''
+plt.savefig("graph")
