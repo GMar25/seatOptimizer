@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Trip Summary{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trip Summary</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .trip-summary {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    .price-box {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #0860C4;
+    }
+    .trip-info {
+      font-size: 1rem;
+      color: #555;
+    }
+    .continue-button {
+      background-color: #0860C4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 20px;
+      font-size: 1.2rem;
+    }
+    .continue-button:hover {
+      background-color: #084ca4;
+    }
+  </style>
+</head>
+<body>
+  <main class="container my-5">
+    <h1 class="mb-4">Your trip summary</h1>
+    <div class="trip-summary">
+      <!-- Price and Basic Info -->
+      <div class="row">
+        <div class="col-md-4">
+          <h3 class="price-box">$249 <small class="text-muted">per person</small></h3>
+          <p>Total: $248.96 (all passengers)</p>
+          <p class="text-muted">Includes taxes and carrier-imposed fees</p>
+          <a href="#" class="text-decoration-none">Price and tax information</a> | 
+          <a href="#" class="text-decoration-none">Bag and optional fees</a>
+          
+        </div>
+        <div class="col-md-8">
+          <!-- Flight Details -->
+          <div class="trip-info mb-4">
+            <h5 class="mb-1 text-success">DEPART</h5>
+            <p class="mb-1">Houston, TX to Dallas/Fort Worth, TX</p>
+            <p class="mb-1 text-muted">Saturday, February 1, 2025</p>
+            <p>5:51 AM → 7:09 AM (1h 18m Nonstop)</p>
+            <p class="text-muted">IAH to DFW | AA1871 | 319-Airbus A319</p>
+          </div>
+          <div class="trip-info">
+            <h5 class="mb-1 text-success">RETURN</h5>
+            <p class="mb-1">Dallas/Fort Worth, TX to Houston, TX</p>
+            <p class="mb-1 text-muted">Sunday, February 2, 2025</p>
+            <p>8:08 AM → 9:21 AM (1h 13m Nonstop)</p>
+            <p class="text-muted">DFW to IAH | AA2420 | 319-Airbus A319</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Continue Button -->
+    <div class="text-center mt-4">
+        <a href="{{ url_for('user.passenger_detail', numPassengers=request.args.get('num_passengers', 1)) }}">
+          <button class="continue-button">Continue</button>
+        </a>
+    </div>
+      
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+{% endblock %}
