@@ -65,7 +65,6 @@ class Plane:
 
             # Add preference for people
             if randint(1, 100) <= PERC_PEOPLE_PREF:
-                print("Adding person")
                 for _ in range(randint(1, 3)):  # Add up to 3 preferred seating next to people
                     i_rand_seat = randint(0, self.rows * self.cols - 1)
 
@@ -91,19 +90,16 @@ class Plane:
 
             # Add preference for vertical
             if randint(1, 100) <= PERC_VERT_PREF:
-                print("Vert pref")
                 moveable.update_pref(vert=True)
                 moveable.pref_vals[1] = randint(0, self.sections - 1)
 
             # Add preference for aisle, middle, window
             if randint(1, 100) <= PERC_HOR_PREF:
-                print("Hor pref")
                 moveable.update_pref(hor=True)
                 moveable.pref_vals[2] = randint(0, 2)
 
-        self.passenger_list()
-
     def passenger_list(self):
+        """Prints out a list of passengers"""
         for i in range(self.rows):
             for j in range(self.cols):
                 index = i * self.cols + j
