@@ -115,6 +115,15 @@
 
         <div class="seat-map" id="seatMap">
             <!-- Rows of seats will be dynamically generated -->
+            {% for row in seat_data %}
+                <div class="seat {{ seat }}" data-status="{{ seat }}">
+                    {% if seat == 'available' %}
+                        "available"
+                    {% else %}
+                        Other
+                    {% endif %}
+                </div>
+            {% endfor %}        
         </div>
     </main>
 

@@ -422,7 +422,7 @@ def OX(plane: Plane, g1, g2):
 
 def output(initial_pop):
 
-    plane = Plane(100, 4, [1], 3)
+    plane = Plane(33, 6, [1], 2)
     plane.populate_w_sample(80)
 
     generations = []

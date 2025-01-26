@@ -16,7 +16,7 @@ def home():
 def formater():
     vals = []
 
-    original = genetic.output()
+    original = genetic.output(4)
     for elem in original.arr:
         vals.append(elem.score)
 
