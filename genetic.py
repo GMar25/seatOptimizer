@@ -23,9 +23,10 @@ class Plane:
         self.aisles = aisles
 
         self.available = []  # Flattened 2D array of booleans (moveable and empty)
-        self.passengers: ["Passenger" | None] = []  # Flattened 2D array of Persons
+        self.passengers: ["Passenger" | None] = []  # Flattened 2D array of Persons or Empty seats
 
         # Debugging
+        self._n_empty = 0
         self._n_movable_passengers = 0
         self._n_immovable_passengers = 0
 
@@ -40,17 +41,19 @@ class Plane:
             if randint(1, 100) <= perc_available:  # If available
                 self.available.append(True)
 
-                if randint(1, 100) >= 2:
-                    self.passengers.append(Passenger())  # Movable Person
+                if randint(1, 100) >= 50:
+                    self.passengers.append(Passenger(i_moveable))  # Movable Person
                     self._n_movable_passengers += 1
                 else:
                     self.passengers.append(None)  # Empty chair
+                    self._n_empty += 1
 
             else:
                 self.available.append(False)
-                self.passengers.append(Passenger())  # Non movable person
+                self.passengers.append(Passenger(i_moveable))  # Non movable person
                 self._n_immovable_passengers += 1
         print(f"Added Passengers: immovable {self._n_immovable_passengers} movable {self._n_movable_passengers}")
+        print(f"Empty: {self._n_empty}")
 
         # Add preferences for each moveable
         for i_moveable in range(self.rows * self.cols):
@@ -62,6 +65,7 @@ class Plane:
 
             # Add preference for people
             if randint(1, 100) <= PERC_PEOPLE_PREF:
+                print("Adding person")
                 for _ in range(randint(1, 3)):  # Add up to 3 preferred seating next to people
                     i_rand_seat = randint(0, self.rows * self.cols - 1)
 
@@ -70,8 +74,9 @@ class Plane:
 
                     # Add to each other
                     other_moveable: Passenger = self.passengers[i_rand_seat]
-
-                    if moveable.is_pref_people() and i_rand_seat not in moveable.pref_people():
+                    if moveable.pref_people() is None:
+                        moveable.pref_vals[0] = []
+                    if i_rand_seat not in moveable.pref_people():
                         moveable.pref_people().append(i_rand_seat)
                         if other_moveable.is_pref_people():  # Add pref for other people
                             other_moveable.pref_people().append(i_moveable)
@@ -85,12 +90,25 @@ class Plane:
                     moveable.update_pref(people=True)
 
             # Add preference for vertical
-            if randint(1, PERC_VERT_PREF) <= 100:
-                self.passengers[i_moveable].vert = randint(0, self.sections - 1)
+            if randint(1, 100) <= PERC_VERT_PREF:
+                print("Vert pref")
+                moveable.update_pref(vert=True)
+                moveable.pref_vals[1] = randint(0, self.sections - 1)
 
             # Add preference for aisle, middle, window
-            if randint(1, PERC_HOR_PREF) <= 100:
-                self.passengers[i_moveable].hor = randint(0, 2)
+            if randint(1, 100) <= PERC_HOR_PREF:
+                print("Hor pref")
+                moveable.update_pref(hor=True)
+                moveable.pref_vals[2] = randint(0, 2)
+
+        self.passenger_list()
+
+    def passenger_list(self):
+        for i in range(self.rows):
+            for j in range(self.cols):
+                index = i * self.cols + j
+                if self.passengers[index] is not None:
+                    print(self.passengers[index])
 
     def __repr__(self):
         output = ""
@@ -98,21 +116,20 @@ class Plane:
         for i in range(self.rows):
             for j in range(self.cols):
                 if self.passengers[i * self.cols + j] is None:
-                    output += "0 "
-
-                elif self.passengers[i * self.cols + j].is_movable():
-                    output += "2 "
-
+                    output += "0 "  # Empty Chairs
+                elif not self.passengers[i * self.cols + j].is_movable():
+                    output += "1 "  # Occupied, but not moveable
                 else:
-                    output += "1 "
+                    output += "2 "  # Moveable
 
             output += "\n"
         return output
 
 
 class Passenger:
-    def __init__(self, people=None, vert=None, hor=None):
+    def __init__(self, position1d: int, people=None, vert=None, hor=None):
         super()
+        self.position1d = position1d
         # Boolean values for whether corresponding preference is set
         self.pref = [people is not None, vert is not None, hor is not None]
         # people, section vertical, section horizontal ([0, 2]: window, aisle, other)
@@ -137,7 +154,7 @@ class Passenger:
         return any(self.pref)
 
     def __repr__(self):
-        return f"Passenger({self.pref}, {self.pref_vals})"
+        return f"Passenger({self.position1d}, {self.pref}, {self.pref_vals}, {self.is_movable()})"
 
 
 # class genome:
@@ -159,7 +176,7 @@ class Passenger:
 #                 continue
 
 
-#         self.score = 0 
+#         self.score = 0
 
 
 #     def at(self, row, col):
