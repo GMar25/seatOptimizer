@@ -29,9 +29,9 @@ class Plane:
         self.passengers: ["Passenger" | None] = []  # Flattened 2D array of Persons or Empty seats
 
         # Debugging
-        self._n_empty = 0
+        # self._n_empty = 0
         self._n_movable_passengers = 0
-        self._n_immovable_passengers = 0
+        # self._n_immovable_passengers = 0
 
     def populate_w_sample(self, perc_available: int):
         """Populate seats (available, passengers) with data."""
@@ -44,7 +44,7 @@ class Plane:
             else:
                 self.available.append(False)
                 self.passengers.append(Passenger(i_moveable))  # Non movable person
-                self._n_immovable_passengers += 1
+                # self._n_immovable_passengers += 1
         # print(f"Added Passengers: immovable {self._n_immovable_passengers} movable {self._n_movable_passengers}")
         # print(f"Empty: {self._n_empty}")
 
@@ -56,7 +56,7 @@ class Plane:
 
             if randint(1, 100) >= 50:
                 self.passengers[i_moveable] = Passenger(i_moveable)  # Movable Person
-                # self._n_movable_passengers += 1
+                self._n_movable_passengers += 1
             else:
                 continue
                 # self.passengers.append(None)  # Empty chair
@@ -65,7 +65,7 @@ class Plane:
             moveable: Passenger = self.passengers[i_moveable]
             # Add preference for people
             if randint(1, 100) <= PERC_PEOPLE_PREF:
-                print("Adding person")
+                # print("Adding person")
                 
                 for _ in range(randint(1, 3)):  # Add up to 3 preferred seating next to people
                     i_rand_seat = randint(0, self.rows * self.cols - 1)
@@ -92,13 +92,13 @@ class Plane:
 
             # Add preference for vertical
             if randint(1, 100) <= PERC_VERT_PREF:
-                print("Vert pref")
+                # print("Vert pref")
                 moveable.update_pref(vert=True)
                 moveable.pref_vals[1] = randint(0, self.sections - 1)
 
             # Add preference for aisle, middle, window
             if randint(1, 100) <= PERC_HOR_PREF or (moveable.pref_vals[0] is None and moveable.pref_vals[1] is None):
-                print("Hor pref")
+                # print("Hor pref")
                 moveable.update_pref(hor=True)
                 moveable.pref_vals[2] = randint(0, 2)
 
@@ -198,11 +198,11 @@ class Plane:
         for i in range(self.rows):
             for j in range(self.cols):
                 if self.passengers[i * self.cols + j] is None:
-                    output += "0 "  # Empty Chairs
+                    output += "E "  # Empty Chairs
                 elif not self.passengers[i * self.cols + j].is_movable():
-                    output += "1 "  # Occupied, but not moveable
+                    output += "X "  # Occupied, but not moveable
                 else:
-                    output += "2 "  # Moveable
+                    output += "M "  # Moveable
 
             output += "\n"
         return output
@@ -317,13 +317,13 @@ class Genome:
     def __repr__(self):
         output = ""
 
-        debug_col = 4
+        debug_col = 6
 
         for i in range(len(self.arr)):
             if self.arr[i] is None:
-                output += "A "  # Empty Chairs
+                output += "E "  # Empty Chairs
             elif not self.arr[i].is_movable():
-                output += "B "  # Occupied, but not moveable
+                output += "X "  # Occupied, but not moveable
             else:
                 output += f"{self.arr[i].position1d} "  # Moveable
 
@@ -420,10 +420,24 @@ def OX(plane: Plane, g1, g2):
     return (off1, off2)
 
 
+def print_scores(g):
+    arr = []
+    for elem in g.arr:
+        if elem != None and elem.is_movable():
+            arr.append((elem.position1d, round(elem.score, 2)))
+        arr.sort()
+
+    for elem in arr:
+        print(elem[0], "score:", round(elem[1], 2))
+
 initial_pop = 128
 
-plane = Plane(100, 6, [1], 3)
+print("People, Vertical, Horizontal")
+plane = Plane(3, 6, [2], 3)
 plane.populate_w_sample(80)
+
+print("\nPlane")
+print(plane)
 
 generations = []
 max_h = []
@@ -433,6 +447,8 @@ curr = []
 for i in range(initial_pop):
     curr.append(Genome(plane))
 
+
+original = True
 change = 1
 prev = -1
 while change >= .1:
@@ -441,6 +457,10 @@ while change >= .1:
     heap = []
     for genome in curr:
         hq.heappush(heap, (-genome.calc_heuristic(plane), genome))
+
+    if original:
+        save = deepcopy(curr[0])
+        original = False
 
     r_sum = 0
     for i in range(len(curr) // 2):
@@ -476,6 +496,19 @@ while change >= .1:
         prev = avg_h[-1]
 
     curr = next
+
+print("Original Genome", round(save.calc_heuristic(plane), 2), '/', plane._n_movable_passengers)
+print(save)
+
+print("Final Genome", round(generations[-1].calc_heuristic(plane), 2), '/', plane._n_movable_passengers)
+print(generations[-1])
+
+print("Original Scores")
+print_scores(save)
+print()
+
+print("Final Scores")
+print_scores(generations[-1])
 
 plt.figure(1)
 plt.plot(max_h)
