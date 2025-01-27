@@ -38,13 +38,13 @@
             background-color: #bbb;
         }
 
-        .seat.selected {
+        .seat.empty {
             background-color: #0860C4;
             color: white;
         }
 
         .seat.unavailable {
-            background-color: lightgray;
+            background-color: gray;
             cursor: not-allowed;
         }
 
@@ -68,16 +68,12 @@
             margin-right: 5px;
         }
 
-        .legend-color.available {
-            background-color: #ccc;
-        }
-
-        .legend-color.selected {
+        .legend-color.empty {
             background-color: #0860C4;
         }
 
         .legend-color.unavailable {
-            background-color: lightgray;
+            background-color: gray;
         }
     </style>
 </head>
@@ -100,13 +96,13 @@
 
         <div class="legend">
             <div class="legend-item">
-                <div class="legend-color available"></div>
-                <span>Available</span>
+                <div class="legend-color empty"></div>
+                <span>Empty</span>
             </div>
-            <div class="legend-item">
+            <!-- <div class="legend-item">
                 <div class="legend-color selected"></div>
                 <span>Selected</span>
-            </div>
+            </div> -->
             <div class="legend-item">
                 <div class="legend-color unavailable"></div>
                 <span>Unavailable</span>
@@ -116,14 +112,28 @@
         <div class="seat-map" id="seatMap">
             <!-- Rows of seats will be dynamically generated -->
             {% for row in seat_data %}
-                <div class="seat {{ seat }}" data-status="{{ seat }}">
-                    {% if seat == 'available' %}
-                        "available"
-                    {% else %}
-                        Other
+
+                {% for seat in row %}
+                    {% if loop.index == 4 %}
+                        <div width="20px"></div>
                     {% endif %}
-                </div>
-            {% endfor %}        
+                
+                    {% if seat == -1 %}
+                        <div class="seat empty"></div>
+                    {% elif seat == -2 %}
+                        <div class="seat unavailable"></div>
+                    {% else %}
+                        <div class="seat" style="background-color: rgb({{ 255 - (255 * seat) }}, {{ 255 * seat }}, 0)"></div>
+                    {% endif %}
+
+                {% endfor %}
+                
+            {% endfor %}      
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center;">
+            <div style="margin-right: 20px;" id="gen">Generation: 0</div>
+            <div style="margin-right: 20px;">Original Score: {{ score }}</div>
+            <div id="curr_score">Current Score: {{ score }}</div>
         </div>
     </main>
 
@@ -131,33 +141,63 @@
         <p>&copy; 2025 American Airlines. All rights reserved.</p>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script> -->
     <script>
-        const seatMap = document.getElementById('seatMap');
+        // Function to update the seat map with new data
+        function updateSeatMap(seatData, n_score) {
+            const gen = document.getElementById('gen')
+            gen.textContent = "Generations: " + (parseInt(gen.textContent.slice(12, gen.textContent.length)) + 1)
 
-        // Generate 33 rows of seats
-        for (let i = 1; i <= 33; i++) {
-            for (let j = 1; j <= 7; j++) {
-                if (j === 4) {
-                    const walkway = document.createElement('div');
-                    walkway.style.width = '20px';
-                    seatMap.appendChild(walkway);
-                    continue;
-                }
+            const curr_score = document.getElementById('curr_score')
+            curr_score.textContent = "Current Score: " + n_score
 
-                const seat = document.createElement('div');
-                seat.classList.add('seat');
-                seat.textContent = `$${Math.floor(Math.random() * 20) + 10}`; // Random price
+            const seatMap = document.getElementById('seatMap');
+            seatMap.innerHTML = ''; // Clear the current seat map
 
-                seat.addEventListener('click', () => {
-                    if (!seat.classList.contains('unavailable')) {
-                        seat.classList.toggle('selected');
+            seatData.forEach(row => {
+                i = 0
+                row.forEach(seat => {
+                    if (i === 3) {
+                        const aisle = document.createElement('div');
+                        seatMap.appendChild(aisle);
                     }
-                });
+                    i += 1
 
-                seatMap.appendChild(seat);
-            }
+                    const seatDiv = document.createElement('div');
+                    if (seat === -1) {
+                        seatDiv.classList.add('seat');
+                        seatDiv.classList.add('empty');
+                    }
+                    else if (seat === -2) {
+                        seatDiv.classList.add('seat');
+                        seatDiv.classList.add('unavailable');
+                    } else {
+                        seatDiv.classList.add('seat');
+                        seatDiv.style.backgroundColor = `rgb(${255 - (255 * seat)}, ${255 * seat}, 0)`;
+                    }
+                    seatMap.appendChild(seatDiv);
+                });
+            });
         }
+
+        // Fetch updated seat data every 5 seconds
+        let intervalId = setInterval(() => {
+            fetch('/get_seat_data')
+                .then(response => response.json())
+                .then(tup => {
+                    data = tup[0]
+                    n_score = tup[1]
+
+                    if (data.length === 0) {
+                        console.log("clear interval")
+                        clearInterval(intervalId);
+                    }
+                    else {
+                        updateSeatMap(data, n_score); 
+                    }
+                })
+                .catch(error => console.error('Error fetching seat data:', error));
+        }, 1000); 
     </script>
 </body>
 </html>

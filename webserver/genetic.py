@@ -4,12 +4,15 @@ from copy import deepcopy
 import heapq as hq
 from random import randint, shuffle
 from typing import List
-import matplotlib.pyplot as plt
 
 PERC_PEOPLE_PREF = 30
 PERC_VERT_PREF = 30
 PERC_HOR_PREF = 30
 
+PLANE_ROWS = 100
+PLANE_COLS = 6 # Matches seat_details
+PLANE_AISLES = [2] # Matches seat_details
+INITIAL_POP = 128
 
 class Plane:
     """
@@ -102,7 +105,7 @@ class Plane:
                 moveable.update_pref(hor=True)
                 moveable.pref_vals[2] = randint(0, 2)
 
-        self.passenger_list()
+        # self.passenger_list()
 
     def passenger_list(self):
         for i in range(self.rows):
@@ -246,7 +249,7 @@ class Genome:
     def __init__(self, plane: Plane):
         super()
 
-        passengers = [] # TODO slow
+        passengers = []
         for elem in plane.passengers:
             if elem != None and elem.is_movable():
                 passengers.append(deepcopy(elem))
@@ -430,97 +433,68 @@ def print_scores(g):
     for elem in arr:
         print(elem[0], "score:", round(elem[1], 2))
 
-initial_pop = 128
+def initialize():
 
-print("People, Vertical, Horizontal")
-plane = Plane(3, 6, [2], 3)
-plane.populate_w_sample(80)
+    initial_pop = INITIAL_POP
+    plane = Plane(PLANE_ROWS, PLANE_COLS, PLANE_AISLES, 3)
+    plane.populate_w_sample(80)
 
-print("\nPlane")
-print(plane)
+    curr = []
+    for i in range(initial_pop):
+        curr.append(Genome(plane))
 
-generations = []
-max_h = []
-avg_h = []
-
-curr = []
-for i in range(initial_pop):
-    curr.append(Genome(plane))
-
-
-original = True
-change = 1
-prev = -1
-while change >= .1:
-    next = []
-
-    heap = []
     for genome in curr:
-        hq.heappush(heap, (-genome.calc_heuristic(plane), genome))
+        genome.calc_heuristic(plane)
 
-    if original:
-        save = deepcopy(curr[0])
-        original = False
+    print("initialize", len(curr))
+    return (plane, curr, -1, -1)
 
-    r_sum = 0
-    for i in range(len(curr) // 2):
-        elem1 = hq.heappop(heap)
-        elem2 = hq.heappop(heap)
+def get_next_generation(plane, curr, change):
 
-        r_sum -= elem1[0]
-        r_sum -= elem2[0]
-        if i == 0:
-            generations.append(deepcopy(elem1[1]))
-            max_h.append(-elem1[0])
+    if change < 0.1:
+        return None
 
-        children = OX(plane, elem1[1], elem2[1])
-        score1 = children[0].calc_heuristic(plane)
-        score2 = children[1].calc_heuristic(plane) 
-
-        results = []
-        hq.heappush(results, (elem1[0], elem1[1]))
-        hq.heappush(results, (elem2[0], elem2[1]))
-
-        hq.heappush(results, (-score1, children[0]))
-        hq.heappush(results, (-score2, children[1]))
-
-        next.append(hq.heappop(results)[1])
-        next.append(hq.heappop(results)[1])
-
-    avg_h.append(r_sum / len(curr))
-
-    if prev == -1:
-        prev = avg_h[-1]
     else:
-        change = abs(avg_h[-1] - prev)
-        prev = avg_h[-1]
+        next = []
 
-    curr = next
-print("Original Genome", round(save.calc_heuristic(plane), 2), '/', plane._n_movable_passengers)
-print(save)
+        heap = []
+        for genome in curr:
+            hq.heappush(heap, (-genome.calc_heuristic(plane), genome))
 
-print("Final Genome", round(generations[-1].calc_heuristic(plane), 2), '/', plane._n_movable_passengers)
-print(generations[-1])
+        for i in range(len(curr) // 2):
+            elem1 = hq.heappop(heap)
+            elem2 = hq.heappop(heap)
 
-print("Original Scores")
-print_scores(save)
-print()
+            children = OX(plane, elem1[1], elem2[1])
+            score1 = children[0].calc_heuristic(plane)
+            score2 = children[1].calc_heuristic(plane) 
 
-print("Final Scores")
-print_scores(generations[-1])
+            results = []
+            hq.heappush(results, (elem1[0], elem1[1]))
+            hq.heappush(results, (elem2[0], elem2[1]))
 
-plt.figure(1)
-plt.plot(max_h)
-plt.title("Generation vs Max Score")
-plt.xlabel("Generation")
-plt.ylabel("Heurestic Score")
-plt.savefig("g1")
+            hq.heappush(results, (-score1, children[0]))
+            hq.heappush(results, (-score2, children[1]))
 
-# Create second figure
-plt.figure(2)
-plt.plot(avg_h)
-plt.title("Generation vs Avg Score")
-plt.xlabel("Generation")
-plt.ylabel("Heurestic Score")
-plt.savefig("g2")
+            next.append(hq.heappop(results)[1])
+            next.append(hq.heappop(results)[1])
+
+        return (next)
+
+    
+# plt.figure(1)
+# plt.plot(max_h)
+# plt.title("Generation vs Max Score")
+# plt.xlabel("Generation")
+# plt.ylabel("Heurestic Score")
+# plt.savefig("g1")
+
+# # Create second figure
+# plt.figure(2)
+# plt.plot(avg_h)
+# plt.title("Generation vs Avg Score")
+# plt.xlabel("Generation")
+# plt.ylabel("Heurestic Score")
+# plt.savefig("g2")
+
 
